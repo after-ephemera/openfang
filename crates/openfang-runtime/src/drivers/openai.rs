@@ -69,13 +69,14 @@ fn uses_completion_tokens(model: &str) -> bool {
 
 /// Returns true if a model rejects the `temperature` parameter.
 ///
-/// OpenAI's o-series reasoning models and some GPT-5 variants do not support
-/// temperature and return 400 if it is included.
+/// OpenAI's o-series reasoning models, some GPT-5 variants, and Moonshot's
+/// kimi-k2.5 do not support temperature and return 400 if it is included.
 fn rejects_temperature(model: &str) -> bool {
     let m = model.to_lowercase();
     m.starts_with("o1")
         || m.starts_with("o3")
         || m.starts_with("o4")
+        || m == "kimi-k2.5"
 }
 
 #[derive(Debug, Serialize)]
@@ -385,10 +386,9 @@ impl LlmDriver for OpenAIDriver {
                     }
                 }
 
-                // o-series / reasoning models: strip temperature if rejected
+                // Strip temperature if rejected (o-series, kimi-k2.5, etc.)
                 if status == 400
                     && body.contains("temperature")
-                    && body.contains("unsupported_parameter")
                     && oai_request.temperature.is_some()
                     && attempt < max_retries
                 {
@@ -726,10 +726,9 @@ impl LlmDriver for OpenAIDriver {
                     }
                 }
 
-                // o-series / reasoning models: strip temperature if rejected
+                // Strip temperature if rejected (o-series, kimi-k2.5, etc.)
                 if status == 400
                     && body.contains("temperature")
-                    && body.contains("unsupported_parameter")
                     && oai_request.temperature.is_some()
                     && attempt < max_retries
                 {
